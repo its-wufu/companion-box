@@ -1,29 +1,45 @@
 import styled from "styled-components";
 import { Slider } from "@mui/material";
 import debounce from "lodash.debounce";
+import { useState, useEffect, useCallback } from "react";
 
 type Props = {
   number: number;
-  handleChangeNumber: (
-    event: Event,
-    value: number | number[],
-    activeThumb: number
-  ) => void;
+  handleChangeNumber: (value: number) => void;
   label: string;
   min?: number;
   max?: number;
 };
 
 const MenuOption = ({ number, handleChangeNumber, label, min, max }: Props) => {
+  const [value, setValue] = useState(number); // Hack because of the debounce T_T
+
+  const onChangeHandler = useCallback(
+    (_: Event, newValue: number | number[]) => {
+      if (typeof newValue === "number") {
+        setValue(newValue);
+      } else {
+        setValue(newValue[0]);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const debouncedHandler = debounce(() => handleChangeNumber(value), 50);
+    debouncedHandler();
+    return () => debouncedHandler.cancel();
+  }, [handleChangeNumber, value]);
+
   return (
     <OptionBox>
       <Label>
-        {label}: {Math.round(number * 10) / 10}
+        {label}: {Math.round(value * 10) / 10}
       </Label>
       <Slider
         aria-label={label}
-        value={number}
-        onChange={debounce(handleChangeNumber, 50)}
+        value={value}
+        onChange={onChangeHandler}
         min={min || 1}
         max={max || 7}
         valueLabelDisplay="off"
